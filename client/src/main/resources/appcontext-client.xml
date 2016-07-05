@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans.xsd">		
+
+
+	<!-- http://stackoverflow.com/questions/19347350/httpcomponents-poolinghttpclientconnectionmanager-maxperroute-and-maxtotal -->
+	<!-- http://dev.bizo.com/2013/04/sensible-defaults-for-apache-httpclient.html -->
+	<bean id="poolingHttpClientConnectionManager" class="org.apache.http.impl.conn.PoolingHttpClientConnectionManager" 
+		destroy-method="shutdown">
+		<property name="maxTotal" value="50"/> 
+		<property name="defaultMaxPerRoute" value="50"/> 
+	</bean>
+	
+	<bean id="idleConnectionMonitorThread"  class="com.kdemo.rest.http.client.IdleConnectionMonitorThread"
+		init-method="start" destroy-method="shutdown">
+		<constructor-arg name="connMgr" ref="poolingHttpClientConnectionManager"/>	
+		<constructor-arg name="idleTimeoutInMS" value="600000"/>	
+	</bean>
+	
+
+
+	<bean id="restTemplate" class="org.springframework.web.client.RestTemplate">
+		<constructor-arg name="requestFactory">
+			<bean
+				class="org.springframework.http.client.HttpComponentsClientHttpRequestFactory" destroy-method="destroy">
+				<constructor-arg >
+					<bean class="org.apache.http.impl.client.HttpClients" factory-method="createMinimal">
+						<constructor-arg ref="poolingHttpClientConnectionManager"/>
+					</bean>
+				</constructor-arg>
+				<!-- <constructor-arg index="1" value="false"/> -->
+				<property name="readTimeout" value="60000" />
+				<property name="connectTimeout" value="60000" />
+			</bean>
+		</constructor-arg>
+	</bean>
+	
+</beans>
